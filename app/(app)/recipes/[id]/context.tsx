@@ -1,0 +1,161 @@
+"use client";
+
+import type { FullRecipeDTO, MeasurementSystem, RecipeIngredientsDto } from "@/types";
+
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  ReactNode,
+  useCallback,
+} from "react";
+import { useMutation } from "@tanstack/react-query";
+import { TRPCClientError } from "@trpc/client";
+
+import { useRecipeQuery, useRecipeSubscription } from "@/hooks/recipes";
+import { useTRPC } from "@/app/providers/trpc-provider";
+
+type Ctx = {
+  recipe: FullRecipeDTO | null;
+  isLoading: boolean;
+  error: Error | null;
+  isNotFound: boolean;
+  convertingTo: MeasurementSystem | null;
+  adjustedIngredients: RecipeIngredientsDto[];
+  setIngredientAmounts: (servings: number) => void;
+  startConversion: (target: MeasurementSystem) => void;
+  reset: () => void;
+};
+
+const RecipeContext = createContext<Ctx | null>(null);
+
+type ProviderProps = { recipeId: string; children: ReactNode | ((ctx: Ctx) => ReactNode) };
+
+export function RecipeContextProvider({ recipeId, children }: ProviderProps) {
+  const trpc = useTRPC();
+  const { recipe, isLoading, error, invalidate: _invalidate } = useRecipeQuery(recipeId);
+  const [_servings, setServings] = useState<number | null>(null);
+  const [convertingTo, setConvertingTo] = useState<MeasurementSystem | null>(null);
+  const [adjustedIngredients, setAdjustedIngredients] = useState<RecipeIngredientsDto[]>(
+    recipe?.recipeIngredients ?? []
+  );
+
+  // Subscribe to real-time updates for this recipe
+  useRecipeSubscription(recipeId);
+
+  // Mutation for converting measurements
+  const convertMutation = useMutation(trpc.recipes.convertMeasurements.mutationOptions());
+
+  // Check if error is a 404 (NOT_FOUND)
+  const isNotFound = error instanceof TRPCClientError && error.data?.code === "NOT_FOUND";
+
+  // Clear converting state when recipe system matches target
+  useEffect(() => {
+    if (!recipe || !convertingTo) return;
+
+    if (recipe.systemUsed === convertingTo) {
+      setConvertingTo(null);
+      // Update adjusted ingredients with new converted values
+      setAdjustedIngredients(recipe.recipeIngredients);
+    }
+  }, [recipe, convertingTo]);
+
+  const reset = useCallback(() => {
+    if (!recipe) return;
+
+    setConvertingTo(null);
+    setServings(recipe.servings);
+    setAdjustedIngredients(recipe.recipeIngredients);
+  }, [recipe]);
+
+  const startConversion = useCallback(
+    (target: MeasurementSystem) => {
+      convertMutation.mutate(
+        { recipeId: recipe!.id, targetSystem: target },
+        {
+          onSuccess: () => {
+            setConvertingTo(target);
+          },
+          onError: () => {
+            reset();
+          },
+        }
+      );
+    },
+    [convertMutation, recipe, reset]
+  );
+
+  const setIngredientAmounts = useCallback(
+    (servings: number) => {
+      if (!recipe || servings == null || servings == recipe.servings) return;
+
+      setServings(servings);
+      setAdjustedIngredients(
+        recipe.recipeIngredients.map((ing) => {
+          if (ing.amount == null && ing.amount === "") return ing;
+
+          const amountInt = Number(ing.amount);
+
+          if (isNaN(amountInt) || amountInt <= 0) return ing;
+
+          const newAmount = Math.round((amountInt / recipe.servings) * servings * 100) / 100;
+
+          return { ...ing, amount: newAmount };
+        })
+      );
+    },
+    [recipe]
+  );
+
+  const value = useMemo<Ctx>(
+    () => ({
+      recipe,
+      isLoading,
+      error: error instanceof Error ? error : error ? new Error(String(error)) : null,
+      isNotFound,
+      convertingTo,
+      adjustedIngredients,
+      setIngredientAmounts,
+      startConversion,
+      reset,
+    }),
+    [
+      recipe,
+      isLoading,
+      error,
+      isNotFound,
+      convertingTo,
+      adjustedIngredients,
+      setIngredientAmounts,
+      startConversion,
+      reset,
+    ]
+  );
+
+  return (
+    <RecipeContext.Provider value={value}>
+      {typeof children === "function" ? children(value) : children}
+    </RecipeContext.Provider>
+  );
+}
+
+export function useRecipeContext() {
+  const ctx = useContext(RecipeContext);
+
+  if (!ctx) throw new Error("useRecipeContext must be used within RecipeContextProvider");
+
+  return ctx;
+}
+
+/**
+ * Returns context with recipe guaranteed to be non-null (throws if not loaded)
+ */
+export function useRecipeContextRequired() {
+  const ctx = useRecipeContext();
+
+  if (!ctx.recipe) throw new Error("Recipe not loaded");
+
+  return ctx as typeof ctx & { recipe: NonNullable<typeof ctx.recipe> };
+}

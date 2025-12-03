@@ -1,0 +1,19 @@
+"use client";
+
+import type { RecipeIngredientsDto } from "@/types";
+
+import { useRecipeQuery } from "@/hooks/recipes/use-recipe-query";
+
+/**
+ * Hook to fetch recipe ingredients using the tRPC recipes.get query.
+ * This is a convenience wrapper for components that only need ingredients.
+ */
+export function useRecipeIngredients(id: string | null) {
+  const { recipe, isLoading, error } = useRecipeQuery(id);
+
+  return {
+    ingredients: (recipe?.recipeIngredients ?? []) as RecipeIngredientsDto[],
+    isLoading,
+    error,
+  };
+}

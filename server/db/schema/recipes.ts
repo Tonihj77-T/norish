@@ -1,0 +1,45 @@
+import {
+  index,
+  integer,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  unique,
+  pgEnum,
+} from "drizzle-orm/pg-core";
+
+import { users } from "./auth";
+
+export const measurementSystemEnum = pgEnum("measurement_system", ["metric", "us"]);
+
+export const recipes = pgTable(
+  "recipes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    name: text("name").notNull(),
+    description: text("description"),
+    image: text("image"),
+    url: text("url"),
+    servings: integer("servings").notNull().default(1),
+    prepMinutes: integer("prep_minutes"),
+    cookMinutes: integer("cook_minutes"),
+    totalMinutes: integer("total_minutes"),
+    systemUsed: measurementSystemEnum("system_used").notNull().default("metric"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // Common filters/sorts for dashboard lists
+    index("idx_recipes_user_id").on(t.userId),
+    index("idx_recipes_name").on(t.name),
+    unique("uq_recipes_url").on(t.url),
+    index("idx_recipes_created_at_desc").on(t.createdAt.desc()),
+    index("idx_recipes_total_minutes").on(t.totalMinutes),
+    index("idx_recipes_prep_minutes").on(t.prepMinutes),
+    index("idx_recipes_cook_minutes").on(t.cookMinutes),
+  ]
+);

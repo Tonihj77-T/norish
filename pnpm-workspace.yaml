@@ -1,0 +1,6 @@
+onlyBuiltDependencies:
+  - '@heroui/shared-utils'
+  - esbuild
+  - ffmpeg-static
+  - sharp
+  - unrs-resolver

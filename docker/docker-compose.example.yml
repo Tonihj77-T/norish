@@ -1,0 +1,64 @@
+services:
+  norish:
+    image: norishapp/norish:latest
+    container_name: norish-app
+    restart: always  # Required for server restart functionality from Admin UI
+    ports:
+      - "3000:3000"
+    # user: "1000:1000"  # Match your host user's UID:GID (run `id` to check), only needed with bind mounts
+    # The example uses named volume 'norish_data' which handles permissions automatically
+    volumes:
+      - norish_data:/app/uploads
+    environment:
+      # Core settings (required)
+      AUTH_URL: http://norish.example.com # The URL where Norish is reachable
+      DATABASE_URL: postgres://postgres:norish@db:5432/norish
+      MASTER_KEY: <32-byte-base64-key>    # Generate with: openssl rand -base64 32
+      
+      # Optional
+      RECIPES_DISK_DIR: /app/uploads      # Defaults to /app/uploads
+      # NEXT_PUBLIC_LOG_LEVEL: info       # trace, debug, info, warn, error, fatal (default: info in prod, debug in dev)
+      # CHROME_WS_ENDPOINT: ""            # For Puppeteer to improve recipe scraping
+      
+      # ─────────────────────────────────────────────────────────────────────────
+      # FIRST USER SETUP
+      # ─────────────────────────────────────────────────────────────────────────
+      # On first startup, configure ONE auth provider below to create your admin account.
+      # After first login, use Settings → Admin to configure additional providers,
+      # AI settings, video parsing, and all other options.
+      
+      # Option 1: OIDC (Authentik, Keycloak, PocketID, etc.)
+      OIDC_NAME: NoraId
+      OIDC_ISSUER: https://nora.example.com
+      OIDC_CLIENT_ID: <client-id>
+      OIDC_CLIENT_SECRET: <client-secret>
+      # OIDC_WELLKNOWN: https://auth.example.com/.well-known/openid-configuration
+
+      # Option 2: GitHub OAuth (uncomment and remove OIDC above)
+      # GITHUB_CLIENT_ID: <github-client-id>
+      # GITHUB_CLIENT_SECRET: <github-client-secret>
+
+      # Option 3: Google OAuth (uncomment and remove OIDC above)
+      # GOOGLE_CLIENT_ID: <google-client-id>
+      # GOOGLE_CLIENT_SECRET: <google-client-secret>
+    depends_on:
+      - db
+
+  # PostgreSQL Database
+  db:
+    image: postgres:17-alpine
+    container_name: norish-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: norish
+      POSTGRES_DB: norish
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+
+# Use this or map the volume to a host path if you want to persist data
+volumes:
+  db_data:
+  norish_data:

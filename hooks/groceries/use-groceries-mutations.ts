@@ -1,0 +1,390 @@
+"use client";
+
+import type { GroceryDto, RecurringGroceryDto } from "@/types";
+import type { RecurrencePattern } from "@/types/recurrence";
+
+import { useMutation } from "@tanstack/react-query";
+
+import { useGroceriesQuery } from "./use-groceries-query";
+
+import { useTRPC } from "@/app/providers/trpc-provider";
+import { useUnitsQuery } from "@/hooks/config";
+import { parseIngredientWithDefaults } from "@/lib/helpers";
+import { calculateNextOccurrence, getTodayString } from "@/lib/recurrence/calculator";
+
+export type GroceryCreateData = {
+  name: string;
+  amount?: number | null;
+  unit?: string | null;
+  isDone?: boolean;
+};
+
+export type GroceriesMutationsResult = {
+  createGrocery: (raw: string) => void;
+  createGroceriesFromData: (groceries: GroceryCreateData[]) => Promise<string[]>;
+  createRecurringGrocery: (raw: string, pattern: RecurrencePattern) => void;
+  toggleGroceries: (ids: string[], isDone: boolean) => void;
+  toggleRecurringGrocery: (recurringGroceryId: string, groceryId: string, isDone: boolean) => void;
+  updateGrocery: (id: string, raw: string) => void;
+  updateRecurringGrocery: (
+    recurringGroceryId: string,
+    groceryId: string,
+    raw: string,
+    pattern: RecurrencePattern | null
+  ) => void;
+  deleteGroceries: (ids: string[]) => void;
+  deleteRecurringGrocery: (recurringGroceryId: string) => void;
+  getRecurringGroceryForGrocery: (groceryId: string) => RecurringGroceryDto | null;
+};
+
+export function useGroceriesMutations(): GroceriesMutationsResult {
+  const trpc = useTRPC();
+  const { units } = useUnitsQuery();
+  const { setGroceriesData, invalidate, groceries, recurringGroceries } = useGroceriesQuery();
+
+  const createMutation = useMutation(trpc.groceries.create.mutationOptions());
+  const toggleMutation = useMutation(trpc.groceries.toggle.mutationOptions());
+  const updateMutation = useMutation(trpc.groceries.update.mutationOptions());
+  const deleteMutation = useMutation(trpc.groceries.delete.mutationOptions());
+  const createRecurringMutation = useMutation(trpc.groceries.createRecurring.mutationOptions());
+  const updateRecurringMutation = useMutation(trpc.groceries.updateRecurring.mutationOptions());
+  const deleteRecurringMutation = useMutation(trpc.groceries.deleteRecurring.mutationOptions());
+  const checkRecurringMutation = useMutation(trpc.groceries.checkRecurring.mutationOptions());
+
+  const createGrocery = (raw: string) => {
+    const parsed = parseIngredientWithDefaults(raw, units)[0];
+    const groceryData = {
+      name: parsed.description,
+      amount: parsed.quantity,
+      unit: parsed.unitOfMeasure,
+      isDone: false,
+    };
+
+    createMutation.mutate([groceryData], {
+      onSuccess: (ids) => {
+        const id = ids[0];
+        const dto: GroceryDto = {
+          id,
+          ...groceryData,
+          recurringGroceryId: null,
+        };
+
+        setGroceriesData((prev) => {
+          if (!prev) return prev;
+          const exists = prev.groceries.some((g) => g.id === id);
+
+          if (exists) return prev;
+
+          return { ...prev, groceries: [dto, ...prev.groceries] };
+        });
+      },
+      onError: () => invalidate(),
+    });
+  };
+
+  const createGroceriesFromData = (groceryDataList: GroceryCreateData[]): Promise<string[]> => {
+    const groceriesToCreate = groceryDataList.map((g) => ({
+      name: g.name,
+      amount: g.amount ?? null,
+      unit: g.unit ?? null,
+      isDone: g.isDone ?? false,
+    }));
+
+    return new Promise((resolve, reject) => {
+      createMutation.mutate(groceriesToCreate, {
+        onSuccess: (ids) => {
+          const dtos: GroceryDto[] = ids.map((id, i) => ({
+            id,
+            name: groceriesToCreate[i].name,
+            amount: groceriesToCreate[i].amount,
+            unit: groceriesToCreate[i].unit,
+            isDone: groceriesToCreate[i].isDone,
+            recurringGroceryId: null,
+          }));
+
+          setGroceriesData((prev) => {
+            if (!prev) return prev;
+            const existingIds = new Set(prev.groceries.map((g) => g.id));
+            const newGroceries = dtos.filter((d) => !existingIds.has(d.id));
+
+            if (newGroceries.length === 0) return prev;
+
+            return { ...prev, groceries: [...newGroceries, ...prev.groceries] };
+          });
+
+          resolve(ids);
+        },
+        onError: (error) => {
+          invalidate();
+          reject(error);
+        },
+      });
+    });
+  };
+
+  const createRecurringGrocery = (raw: string, pattern: RecurrencePattern): void => {
+    const parsed = parseIngredientWithDefaults(raw, units)[0];
+    const today = getTodayString();
+    const nextDate = calculateNextOccurrence(pattern, today);
+
+    createRecurringMutation.mutate(
+      {
+        name: parsed.description,
+        amount: parsed.quantity ?? null,
+        unit: parsed.unitOfMeasure,
+        recurrenceRule: pattern.rule,
+        recurrenceInterval: pattern.interval || 1,
+        recurrenceWeekday: pattern.weekday ?? null,
+        nextPlannedFor: nextDate,
+      },
+      {
+        onSuccess: (id) => {
+          setGroceriesData((prev) => {
+            if (!prev) return prev;
+            const exists = prev.groceries.some((g) => g.id === id);
+
+            if (exists) return prev;
+
+            return {
+              ...prev,
+              groceries: [
+                {
+                  id,
+                  name: parsed.description,
+                  amount: parsed.quantity,
+                  unit: parsed.unitOfMeasure,
+                  isDone: false,
+                  recurringGroceryId: null,
+                } as GroceryDto,
+                ...prev.groceries,
+              ],
+            };
+          });
+        },
+        onError: () => invalidate(),
+      }
+    );
+  };
+
+  const toggleGroceries = (ids: string[], isDone: boolean) => {
+    // Optimistic update
+    setGroceriesData((prev) => {
+      if (!prev) return prev;
+      const updated = prev.groceries.map((g) => (ids.includes(g.id) ? { ...g, isDone } : g));
+
+      return { ...prev, groceries: updated };
+    });
+
+    toggleMutation.mutate({ groceryIds: ids, isDone }, { onError: () => invalidate() });
+  };
+
+  const toggleRecurringGrocery = (
+    recurringGroceryId: string,
+    groceryId: string,
+    isDone: boolean
+  ) => {
+    // Optimistic update
+    setGroceriesData((prev) => {
+      if (!prev) return prev;
+
+      const updatedGroceries = prev.groceries.map((g) =>
+        g.id === groceryId ? { ...g, isDone } : g
+      );
+
+      let updatedRecurringGroceries = prev.recurringGroceries;
+
+      if (isDone) {
+        const recurring = prev.recurringGroceries.find((r) => r.id === recurringGroceryId);
+
+        if (recurring) {
+          const today = getTodayString();
+          const pattern = {
+            rule: recurring.recurrenceRule as "day" | "week" | "month",
+            interval: recurring.recurrenceInterval,
+            weekday: recurring.recurrenceWeekday ?? undefined,
+          };
+          const nextDate = calculateNextOccurrence(
+            pattern,
+            recurring.nextPlannedFor,
+            recurring.nextPlannedFor
+          );
+
+          updatedRecurringGroceries = prev.recurringGroceries.map((r) =>
+            r.id === recurringGroceryId
+              ? { ...r, nextPlannedFor: nextDate, lastCheckedDate: today }
+              : r
+          );
+        }
+      }
+
+      return {
+        ...prev,
+        groceries: updatedGroceries,
+        recurringGroceries: updatedRecurringGroceries,
+      };
+    });
+
+    checkRecurringMutation.mutate(
+      { recurringGroceryId, groceryId, isDone },
+      { onError: () => invalidate() }
+    );
+  };
+
+  const updateGrocery = (id: string, raw: string) => {
+    const parsed = parseIngredientWithDefaults(raw, units)[0];
+
+    // Optimistic update
+    setGroceriesData((prev) => {
+      if (!prev) return prev;
+      const updated = prev.groceries.map((g) =>
+        g.id === id
+          ? { ...g, amount: parsed.quantity, unit: parsed.unitOfMeasure, name: parsed.description }
+          : g
+      );
+
+      return { ...prev, groceries: updated };
+    });
+
+    updateMutation.mutate({ groceryId: id, raw }, { onError: () => invalidate() });
+  };
+
+  const updateRecurringGrocery = (
+    recurringGroceryId: string,
+    groceryId: string,
+    raw: string,
+    pattern: RecurrencePattern | null
+  ) => {
+    const parsed = parseIngredientWithDefaults(raw, units)[0];
+
+    if (pattern) {
+      const today = getTodayString();
+      const nextDate = calculateNextOccurrence(pattern, today);
+
+      // Optimistic update
+      setGroceriesData((prev) => {
+        if (!prev) return prev;
+
+        return {
+          groceries: prev.groceries.map((g) =>
+            g.id === groceryId
+              ? {
+                  ...g,
+                  amount: parsed.quantity,
+                  unit: parsed.unitOfMeasure,
+                  name: parsed.description,
+                }
+              : g
+          ),
+          recurringGroceries: prev.recurringGroceries.map((r) =>
+            r.id === recurringGroceryId
+              ? {
+                  ...r,
+                  name: parsed.description,
+                  amount: parsed.quantity,
+                  unit: parsed.unitOfMeasure,
+                  recurrenceRule: pattern.rule,
+                  recurrenceInterval: pattern.interval,
+                  recurrenceWeekday: pattern.weekday ?? null,
+                  nextPlannedFor: nextDate,
+                }
+              : r
+          ),
+        };
+      });
+
+      updateRecurringMutation.mutate(
+        {
+          recurringGroceryId,
+          groceryId,
+          data: {
+            name: parsed.description,
+            amount: parsed.quantity ?? null,
+            unit: parsed.unitOfMeasure,
+            recurrenceRule: pattern.rule,
+            recurrenceInterval: pattern.interval,
+            recurrenceWeekday: pattern.weekday ?? null,
+            nextPlannedFor: nextDate,
+          },
+        },
+        { onError: () => invalidate() }
+      );
+    } else {
+      // Remove recurrence - convert to regular grocery
+      setGroceriesData((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          recurringGroceries: prev.recurringGroceries.filter((r) => r.id !== recurringGroceryId),
+          groceries: prev.groceries.map((g) =>
+            g.id === groceryId
+              ? {
+                  ...g,
+                  amount: parsed.quantity,
+                  unit: parsed.unitOfMeasure,
+                  name: parsed.description,
+                  recurringGroceryId: null,
+                }
+              : g
+          ),
+        };
+      });
+
+      deleteRecurringMutation.mutate({ recurringGroceryId }, { onError: () => invalidate() });
+      updateMutation.mutate({ groceryId, raw }, { onError: () => invalidate() });
+    }
+  };
+
+  const deleteGroceries = (ids: string[]) => {
+    const idsSet = new Set(ids);
+
+    // Optimistic update
+    setGroceriesData((prev) => {
+      if (!prev) return prev;
+
+      return {
+        groceries: prev.groceries.filter((g) => !idsSet.has(g.id)),
+        recurringGroceries: prev.recurringGroceries,
+      };
+    });
+
+    deleteMutation.mutate({ groceryIds: ids }, { onError: () => invalidate() });
+  };
+
+  const deleteRecurringGrocery = (recurringGroceryId: string) => {
+    // Optimistic update
+    setGroceriesData((prev) => {
+      if (!prev) return prev;
+
+      return {
+        ...prev,
+        recurringGroceries: prev.recurringGroceries.filter((r) => r.id !== recurringGroceryId),
+        groceries: prev.groceries.filter((g) => g.recurringGroceryId !== recurringGroceryId),
+      };
+    });
+
+    deleteRecurringMutation.mutate({ recurringGroceryId }, { onError: () => invalidate() });
+  };
+
+  const getRecurringGroceryForGrocery = (groceryId: string): RecurringGroceryDto | null => {
+    const grocery = groceries.find((g) => g.id === groceryId);
+
+    if (!grocery?.recurringGroceryId) return null;
+
+    return recurringGroceries.find((r) => r.id === grocery.recurringGroceryId) || null;
+  };
+
+  return {
+    // Actions
+    createGrocery,
+    createGroceriesFromData,
+    createRecurringGrocery,
+    toggleGroceries,
+    toggleRecurringGrocery,
+    updateGrocery,
+    updateRecurringGrocery,
+    deleteGroceries,
+    deleteRecurringGrocery,
+    getRecurringGroceryForGrocery,
+  };
+}

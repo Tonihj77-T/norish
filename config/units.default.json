@@ -1,0 +1,337 @@
+{
+  "cl": {
+    "short": "cl",
+    "plural": "centiliters",
+    "alternates": ["centiliter", "centiliters", "cl"]
+  },
+  "dl": {
+    "short": "dl",
+    "plural": "deciliters",
+    "alternates": ["deciliter", "deciliters", "dl"]
+  },
+  "gr": {
+    "short": "gr",
+    "plural": "grams",
+    "alternates": ["gr", "gr.", "gram", "grammen"]
+  },
+  "tl": {
+    "short": "tl",
+    "plural": "theelepels",
+    "alternates": ["tl", "theelepel", "theelepels"]
+  },
+  "el": {
+    "short": "el",
+    "plural": "eetlepels",
+    "alternates": ["el", "eetlepel", "eetlepels"]
+  },
+  "mespunt": {
+    "short": "mespunt",
+    "plural": "mespuntjes",
+    "alternates": ["mespunt", "mespuntje", "mespuntjes"]
+  },
+  "snuf": {
+    "short": "snuf",
+    "plural": "snufjes",
+    "alternates": ["snufje", "snufjes"]
+  },
+  "stuk": {
+    "short": "stuk",
+    "plural": "stuks",
+    "alternates": ["stuk", "stukje", "stukjes", "stuks"]
+  },
+  "teen": {
+    "short": "teen",
+    "plural": "tenen",
+    "alternates": ["teen", "teentje", "teentjes", "tenen"]
+  },
+  "blaadje": {
+    "short": "blaadje",
+    "plural": "blaadjes",
+    "alternates": ["blaadje", "blaadjes", "blad", "bladeren"]
+  },
+  "takje": {
+    "short": "takje",
+    "plural": "takjes",
+    "alternates": ["takje", "takjes", "tak", "takken"]
+  },
+  "bos": {
+    "short": "bos",
+    "plural": "bossen",
+    "alternates": ["bosje", "bosjes", "bossen"]
+  },
+  "stengel": {
+    "short": "stengel",
+    "plural": "stengels",
+    "alternates": ["stengel", "stengels"]
+  },
+  "pak": {
+    "short": "pak",
+    "plural": "pakken",
+    "alternates": ["pakje", "pakjes", "pak", "pakken"]
+  },
+  "blik": {
+    "short": "blik",
+    "plural": "blikken",
+    "alternates": ["blikje", "blikjes", "blik", "blikken"]
+  },
+  "pot": {
+    "short": "pot",
+    "plural": "potten",
+    "alternates": ["pot", "potten"]
+  },
+  "fles": {
+    "short": "fles",
+    "plural": "flessen",
+    "alternates": ["flesje", "flesjes", "fles", "flessen"]
+  },
+  "zak": {
+    "short": "zak",
+    "plural": "zakken",
+    "alternates": ["zakje", "zakjes", "zak", "zakken"]
+  },
+  "doos": {
+    "short": "doos",
+    "plural": "dozen",
+    "alternates": ["doosje", "doosjes", "dozen"]
+  },
+  "handje": {
+    "short": "handje",
+    "plural": "handjes",
+    "alternates": ["handje", "handjes", "handvol", "handvullen"]
+  },
+  "scheut": {
+    "short": "scheut",
+    "plural": "scheuten",
+    "alternates": ["scheutje", "scheutjes", "scheut", "scheuten"]
+  },
+  "kop": {
+    "short": "kop",
+    "plural": "koppen",
+    "alternates": ["kopje", "kopjes", "kop", "koppen"]
+  },
+  "glas": {
+    "short": "glas",
+    "plural": "glazen",
+    "alternates": ["glas", "glazen"]
+  },
+  "plak": {
+    "short": "plak",
+    "plural": "plakken",
+    "alternates": ["plakje", "plakjes", "plakken"]
+  },
+  "reep": {
+    "short": "reep",
+    "plural": "repen",
+    "alternates": ["reepje", "reepjes", "repen"]
+  },
+  "vel": {
+    "short": "vel",
+    "plural": "vellen",
+    "alternates": ["vel", "vellen", "velletje", "velletjes"]
+  },
+  "portie": {
+    "short": "portie",
+    "plural": "porties",
+    "alternates": ["portie", "porties", "portion", "portions"]
+  },
+  "schijf": {
+    "short": "schijf",
+    "plural": "schijven",
+    "alternates": ["schijfje", "schijfjes", "schijven"]
+  },
+  "ring": {
+    "short": "ring",
+    "plural": "ringen",
+    "alternates": ["ring", "ringen"]
+  },
+  "bol": {
+    "short": "bol",
+    "plural": "bollen",
+    "alternates": ["bol", "bolletje", "bolletjes", "bollen"]
+  },
+  "blad": {
+    "short": "blad",
+    "plural": "bladeren",
+    "alternates": ["blaadje", "blaadjes", "blad", "bladeren"]
+  },
+  "reepje": {
+    "short": "reepje",
+    "plural": "reepjes",
+    "alternates": ["reepje", "reepjes"]
+  },
+  "plakje": {
+    "short": "plakje",
+    "plural": "plakjes",
+    "alternates": ["plakje", "plakjes"]
+  },
+  "pinch": {
+    "short": "pinch",
+    "plural": "pinches",
+    "alternates": ["pinch", "pinches", "a pinch", "dash"]
+  },
+  "dash": {
+    "short": "dash",
+    "plural": "dashes",
+    "alternates": ["dash", "dashes", "a dash"]
+  },
+  "handful": {
+    "short": "handful",
+    "plural": "handfuls",
+    "alternates": ["handful", "handfuls", "a handful"]
+  },
+  "drizzle": {
+    "short": "drizzle",
+    "plural": "drizzles",
+    "alternates": ["drizzle", "drizzles", "a drizzle"]
+  },
+  "splash": {
+    "short": "splash",
+    "plural": "splashes",
+    "alternates": ["splash", "splashes", "a splash"]
+  },
+  "scoop": {
+    "short": "scoop",
+    "plural": "scoops",
+    "alternates": ["scoop", "scoops"]
+  },
+  "serving": {
+    "short": "serving",
+    "plural": "servings",
+    "alternates": ["serving", "servings", "portion", "portions"]
+  },
+  "stick": {
+    "short": "stick",
+    "plural": "sticks",
+    "alternates": ["stick", "sticks", "stick(s)"]
+  },
+  "slice": {
+    "short": "slice",
+    "plural": "slices",
+    "alternates": ["slice", "slices", "slc", "slcs"]
+  },
+  "bunch": {
+    "short": "bunch",
+    "plural": "bunches",
+    "alternates": ["bunch", "bunches"]
+  },
+  "sprig": {
+    "short": "sprig",
+    "plural": "sprigs",
+    "alternates": ["sprig", "sprigs", "sprigs of"]
+  },
+  "jar": {
+    "short": "jar",
+    "plural": "jars",
+    "alternates": ["jar", "jars", "mason jar"]
+  },
+  "bottle": {
+    "short": "bottle",
+    "plural": "bottles",
+    "alternates": ["bottle", "bottles", "btl", "btls"]
+  },
+  "can": {
+    "short": "can",
+    "plural": "cans",
+    "alternates": ["can", "cans", "tin"]
+  },
+  "pack": {
+    "short": "pack",
+    "plural": "packs",
+    "alternates": ["pack", "packs", "packet", "packets", "pkg", "pkgs"]
+  },
+  "bag": {
+    "short": "bag",
+    "plural": "bags",
+    "alternates": ["bag", "bags"]
+  },
+  "box": {
+    "short": "box",
+    "plural": "boxes",
+    "alternates": ["box", "boxes", "bx", "bx."]
+  },
+  "tub": {
+    "short": "tub",
+    "plural": "tubs",
+    "alternates": ["tub", "tubs", "container"]
+  },
+  "capful": {
+    "short": "capful",
+    "plural": "capfuls",
+    "alternates": ["cap full", "capful", "capfuls"]
+  },
+  "pouch": {
+    "short": "pouch",
+    "plural": "pouches",
+    "alternates": ["pouch", "pouches"]
+  },
+  "sleeve": {
+    "short": "sleeve",
+    "plural": "sleeves",
+    "alternates": ["sleeve", "sleeves"]
+  },
+  "roll": {
+    "short": "roll",
+    "plural": "rolls",
+    "alternates": ["roll", "rolls"]
+  },
+  "leaf": {
+    "short": "leaf",
+    "plural": "leaves",
+    "alternates": ["leaf", "leaves"]
+  },
+  "ear": {
+    "short": "ear",
+    "plural": "ears",
+    "alternates": ["ear", "ears", "ear of corn", "ears of corn"]
+  },
+  "wedge": {
+    "short": "wedge",
+    "plural": "wedges",
+    "alternates": ["wedge", "wedges"]
+  },
+  "piece": {
+    "short": "piece",
+    "plural": "pieces",
+    "alternates": ["piece", "pieces", "pc", "pcs", "pc.", "pcs."]
+  },
+  "chunk": {
+    "short": "chunk",
+    "plural": "chunks",
+    "alternates": ["chunk", "chunks"]
+  },
+  "cube": {
+    "short": "cube",
+    "plural": "cubes",
+    "alternates": ["cube", "cubes"]
+  },
+  "strip": {
+    "short": "strip",
+    "plural": "strips",
+    "alternates": ["strip", "strips"]
+  },
+  "fillet": {
+    "short": "fillet",
+    "plural": "fillets",
+    "alternates": ["fillet", "fillets", "filet", "filets"]
+  },
+  "heaping_tbsp": {
+    "short": "heaping tbsp",
+    "plural": "heaping tablespoons",
+    "alternates": ["heaping tablespoon", "heaping tablespoons"]
+  },
+  "scant_tbsp": {
+    "short": "scant tbsp",
+    "plural": "scant tablespoons",
+    "alternates": ["scant tablespoon", "scant tablespoons"]
+  },
+  "generous_pinch": {
+    "short": "generous pinch",
+    "plural": "generous pinches",
+    "alternates": ["big pinch", "large pinch", "heaping pinch"]
+  },
+  "splash_large": {
+    "short": "large splash",
+    "plural": "large splashes",
+    "alternates": ["big splash", "good splash"]
+  }
+}

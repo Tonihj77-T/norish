@@ -1,0 +1,142 @@
+import type { TypedEmitter } from "./emitter";
+import type { PermissionLevel } from "@/server/db/zodSchemas/server-config";
+
+import { on } from "events";
+
+import { trpcLogger as log } from "@/server/logger";
+
+/**
+ * Context for policy-based event emission.
+ */
+export interface PolicyEmitContext {
+  userId: string;
+  householdKey: string;
+}
+
+/**
+ * Emit events based on the view policy.
+ * - "everyone" => broadcast to all users
+ * - "household" => emit to household only
+ * - "owner" => emit to the owner only
+ *
+ * @example
+ * ```ts
+ * emitByPolicy(recipeEmitter, viewPolicy, ctx, "created", { recipe });
+ * ```
+ */
+export function emitByPolicy<
+  TEvents extends Record<string, unknown>,
+  K extends keyof TEvents & string,
+>(
+  emitter: TypedEmitter<TEvents>,
+  viewPolicy: PermissionLevel,
+  ctx: PolicyEmitContext,
+  event: K,
+  data: TEvents[K]
+): void {
+  log.debug(
+    { event, viewPolicy, householdKey: ctx.householdKey, userId: ctx.userId },
+    `Emitting event via policy`
+  );
+
+  switch (viewPolicy) {
+    case "everyone":
+      emitter.broadcast(event, data);
+      log.debug({ event }, "Broadcast event emitted");
+      break;
+    case "household":
+      emitter.emitToHousehold(ctx.householdKey, event, data);
+      log.debug({ event, householdKey: ctx.householdKey }, "Household event emitted");
+      break;
+    case "owner":
+      emitter.emitToUser(ctx.userId, event, data);
+      log.debug({ event, userId: ctx.userId }, "User event emitted");
+      break;
+  }
+}
+
+/**
+ * Merges multiple async iterables into one.
+ * Yields from whichever source produces a value first.
+ *
+ * @example
+ * ```ts
+ * const householdIterable = on(emitter, householdEvent, { signal });
+ * const broadcastIterable = on(emitter, broadcastEvent, { signal });
+ * const userIterable = on(emitter, userEvent, { signal });
+ *
+ * for await (const [data] of mergeAsyncIterables([householdIterable, broadcastIterable, userIterable], signal)) {
+ *   yield data;
+ * }
+ * ```
+ */
+export async function* mergeAsyncIterables<T>(
+  iterables: AsyncIterable<T>[],
+  signal?: AbortSignal
+): AsyncGenerator<T> {
+  const iterators = iterables.map((it) => it[Symbol.asyncIterator]());
+  const pending = new Map<number, Promise<{ index: number; result: IteratorResult<T> }>>();
+
+  // Start all iterators
+  for (let i = 0; i < iterators.length; i++) {
+    pending.set(
+      i,
+      iterators[i].next().then((result) => ({ index: i, result }))
+    );
+  }
+
+  try {
+    while (pending.size > 0) {
+      if (signal?.aborted) break;
+
+      const { index, result } = await Promise.race(pending.values());
+
+      if (result.done) {
+        pending.delete(index);
+      } else {
+        yield result.value;
+        pending.set(
+          index,
+          iterators[index].next().then((r) => ({ index, result: r }))
+        );
+      }
+    }
+  } finally {
+    // Cleanup: return all iterators
+    await Promise.all(iterators.map((it) => it.return?.()));
+  }
+}
+
+/**
+ * Creates iterables for all three event channels (household, broadcast, user).
+ * Use with mergeAsyncIterables to listen to events regardless of view policy.
+ *
+ * @example
+ * ```ts
+ * const iterables = createPolicyAwareIterables(recipeEmitter, ctx, "imported", signal);
+ * for await (const [data] of mergeAsyncIterables(iterables, signal)) {
+ *   yield data as RecipeSubscriptionEvents["imported"];
+ * }
+ * ```
+ */
+export function createPolicyAwareIterables<TEvents extends Record<string, unknown>>(
+  emitter: TypedEmitter<TEvents>,
+  ctx: PolicyEmitContext,
+  event: keyof TEvents & string,
+  signal?: AbortSignal
+): AsyncIterable<unknown[]>[] {
+  const householdEventName = emitter.householdEvent(ctx.householdKey, event);
+  const broadcastEventName = emitter.broadcastEvent(event);
+  const userEventName = emitter.userEvent(ctx.userId, event);
+
+  log.debug(
+    { event, householdEventName, broadcastEventName, userEventName },
+    "Creating policy-aware iterables"
+  );
+
+  return [
+    on(emitter, householdEventName, { signal }),
+    on(emitter, broadcastEventName, { signal }),
+    on(emitter, userEventName, { signal }),
+  ];
+}

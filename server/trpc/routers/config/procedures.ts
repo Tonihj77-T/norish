@@ -1,0 +1,46 @@
+import { router } from "../../trpc";
+import { authedProcedure } from "../../middleware";
+
+import { trpcLogger as log } from "@/server/logger";
+import { getUnits, getRecurrenceConfig } from "@/config/server-config-loader";
+import { listAllTagNames } from "@/server/db/repositories/tags";
+
+/**
+ * Get all unique tag names for the authenticated user's household
+ */
+const tags = authedProcedure.query(async ({ ctx }) => {
+  log.debug({ userId: ctx.user.id }, "Getting tags");
+
+  const tagNames = await listAllTagNames();
+
+  return { tags: tagNames };
+});
+
+/**
+ * Get units configuration for ingredient parsing
+ * Units rarely change, safe to cache aggressively on client
+ */
+const units = authedProcedure.query(async ({ ctx }) => {
+  log.debug({ userId: ctx.user.id }, "Getting units config");
+
+  const unitsMap = await getUnits();
+
+  return unitsMap;
+});
+
+/**
+ * Get recurrence configuration for natural language parsing
+ */
+const recurrenceConfig = authedProcedure.query(async ({ ctx }) => {
+  log.debug({ userId: ctx.user.id }, "Getting recurrence config");
+
+  const config = await getRecurrenceConfig();
+
+  return config;
+});
+
+export const configProcedures = router({
+  tags,
+  units,
+  recurrenceConfig,
+});

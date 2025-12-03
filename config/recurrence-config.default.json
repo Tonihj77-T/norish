@@ -1,0 +1,93 @@
+{
+  "locales": {
+    "en": {
+      "everyWords": ["every", "each"],
+      "otherWords": ["other"],
+      "onWords": ["on"],
+      "numberWords": {
+        "one": 1,
+        "two": 2,
+        "three": 3,
+        "four": 4,
+        "five": 5,
+        "six": 6,
+        "seven": 7,
+        "eight": 8,
+        "nine": 9,
+        "ten": 10
+      },
+      "unitWords": {
+        "day": ["day", "days", "daily"],
+        "week": ["week", "weeks", "weekly"],
+        "month": ["month", "months", "monthly"]
+      },
+      "weekdayWords": {
+        "sunday": 0,
+        "sun": 0,
+        "monday": 1,
+        "mon": 1,
+        "tuesday": 2,
+        "tue": 2,
+        "wednesday": 3,
+        "wed": 3,
+        "thursday": 4,
+        "thu": 4,
+        "friday": 5,
+        "fri": 5,
+        "saturday": 6,
+        "sat": 6
+      },
+      "intervalHints": []
+    },
+    "nl": {
+      "everyWords": ["elke", "ieder", "iedere"],
+      "otherWords": ["andere"],
+      "onWords": ["op"],
+      "numberWords": {
+        "een": 1,
+        "twee": 2,
+        "drie": 3,
+        "vier": 4,
+        "vijf": 5,
+        "zes": 6,
+        "zeven": 7,
+        "acht": 8,
+        "negen": 9,
+        "tien": 10
+      },
+      "unitWords": {
+        "day": ["dag", "dagen", "dagelijks"],
+        "week": ["week", "weken", "wekelijks", "weekelijks"],
+        "month": ["maand", "maanden", "maandelijks"]
+      },
+      "weekdayWords": {
+        "zondag": 0,
+        "zon": 0,
+        "maandag": 1,
+        "ma": 1,
+        "dinsdag": 2,
+        "di": 2,
+        "woensdag": 3,
+        "wo": 3,
+        "donderdag": 4,
+        "do": 4,
+        "vrijdag": 5,
+        "vr": 5,
+        "zaterdag": 6,
+        "za": 6
+      },
+      "intervalHints": [
+        {
+          "phrases": ["om de dag", "om de dagen"],
+          "interval": 2,
+          "rule": "day"
+        },
+        {
+          "phrases": ["om de week", "om de weken"],
+          "interval": 2,
+          "rule": "week"
+        }
+      ]
+    }
+  }
+}

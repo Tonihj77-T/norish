@@ -1,0 +1,91 @@
+import type { FullRecipeInsertDTO } from "@/types/dto/recipe";
+
+import { validateVideoLength, getVideoMetadata, downloadVideoAudio } from "./yt-dlp";
+import { extractRecipeFromVideo } from "./normalizer";
+import { cleanupFile } from "./cleanup";
+
+import { SERVER_CONFIG } from "@/config/env-config-server";
+import { videoLogger as log } from "@/server/logger";
+import { isAIEnabled } from "@/config/server-config-loader";
+import { transcribeAudio } from "@/server/ai/transcriber";
+
+export async function processVideoRecipe(url: string): Promise<FullRecipeInsertDTO> {
+  if (!SERVER_CONFIG.VIDEO_PARSING_ENABLED) {
+    throw new Error("Video processing is not enabled.");
+  }
+
+  // Video processing requires AI for transcription and recipe extraction
+  const aiEnabled = await isAIEnabled();
+
+  if (!aiEnabled) {
+    throw new Error("AI features are disabled. Video recipe parsing requires AI.");
+  }
+
+  let audioPath: string | null = null;
+
+  try {
+    log.info({ url }, "Starting video recipe processing");
+
+    // Validate video length before downloading
+    await validateVideoLength(url);
+    log.debug({ url }, "Video length validated");
+
+    // Get metadata
+    const metadata = await getVideoMetadata(url);
+
+    log.info(
+      { url, title: metadata.title, duration: metadata.duration },
+      "Video metadata retrieved"
+    );
+
+    // Download and extract audio
+    audioPath = await downloadVideoAudio(url);
+    log.debug({ url, audioPath }, "Audio downloaded");
+
+    // Transcribe audio
+    log.info({ url }, "Starting audio transcription");
+    const transcript = await transcribeAudio(audioPath);
+
+    log.info({ url, transcriptLength: transcript.length }, "Audio transcribed");
+
+    // Extract recipe from transcript + metadata
+    const recipe = await extractRecipeFromVideo(transcript, metadata, url);
+
+    if (!recipe) {
+      throw new Error(
+        `No recipe found in video. The video may not contain a recipe or the content was not clear enough to extract.`
+      );
+    }
+
+    return recipe;
+  } catch (error: any) {
+    log.error({ err: error }, "Failed to process video");
+
+    // Provide user-friendly error messages
+    if (error.message.includes("exceeds maximum length")) {
+      throw error; // Already has good message
+    }
+    if (error.message.includes("not enabled")) {
+      throw error; // Already has good message
+    }
+    if (error.message.includes("unavailable") || error.message.includes("private")) {
+      throw error; // Already has good message
+    }
+    if (error.message.includes("not supported")) {
+      throw error; // Already has good message
+    }
+    if (error.message.includes("No recipe found")) {
+      throw error; // Already has good message
+    }
+
+    // Generic error
+    const errorMessage = error.message || "Unknown error";
+
+    throw new Error(`Failed to process video recipe: ${errorMessage}`);
+  } finally {
+    // Always cleanup temporary audio file
+    if (audioPath) {
+      await cleanupFile(audioPath);
+    }
+  }
+}

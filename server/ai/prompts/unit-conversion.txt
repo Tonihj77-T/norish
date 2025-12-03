@@ -1,0 +1,3 @@
+Convert recipe measurements from {{sourceSystem}} to {{targetSystem}}. Keep the same order. Use standard units ({{units}}). Set systemUsed to "{{targetSystem}}".
+
+INPUT:

@@ -1,0 +1,189 @@
+"use client";
+
+import type { Slot, CalendarItemViewDto } from "@/types";
+
+import { useSubscription } from "@trpc/tanstack-react-query";
+import { addToast } from "@heroui/react";
+
+import { useCalendarQuery } from "./use-calendar-query";
+
+import { useTRPC } from "@/app/providers/trpc-provider";
+
+export function useCalendarSubscription(startISO: string, endISO: string) {
+  const trpc = useTRPC();
+  const { setCalendarData, removeRecipeFromCache, removeNoteFromCache, invalidate } =
+    useCalendarQuery(startISO, endISO);
+
+  // onRecipePlanned
+  useSubscription(
+    trpc.calendar.onRecipePlanned.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        const { plannedRecipe } = payload;
+
+        setCalendarData((prev) => {
+          const arr = prev[plannedRecipe.date] ?? [];
+          const exists = arr.some((i) => i.id === plannedRecipe.id);
+
+          if (exists) return prev;
+
+          const item: CalendarItemViewDto = {
+            itemType: "recipe",
+            id: plannedRecipe.id,
+            recipeId: plannedRecipe.recipeId,
+            recipeName: plannedRecipe.recipeName ?? "Unknown",
+            slot: plannedRecipe.slot as Slot,
+            date: plannedRecipe.date,
+          };
+
+          return { ...prev, [plannedRecipe.date]: [...arr, item] };
+        });
+      },
+    })
+  );
+
+  // onRecipeDeleted
+  useSubscription(
+    trpc.calendar.onRecipeDeleted.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        const { plannedRecipeId, date } = payload;
+
+        // Remove from base query cache and optimistic data
+        removeRecipeFromCache(plannedRecipeId);
+        setCalendarData((prev) => {
+          const arr = prev[date] ?? [];
+
+          return { ...prev, [date]: arr.filter((i) => i.id !== plannedRecipeId) };
+        });
+      },
+    })
+  );
+
+  // onRecipeUpdated
+  useSubscription(
+    trpc.calendar.onRecipeUpdated.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        const { plannedRecipe, oldDate } = payload;
+        const newDate = plannedRecipe.date;
+
+        setCalendarData((prev) => {
+          // Remove from old date
+          const oldArr = (prev[oldDate] ?? []).filter((i) => i.id !== plannedRecipe.id);
+
+          // Add to new date
+          const newArr = prev[newDate] ?? [];
+          const existsInNew = newArr.some((i) => i.id === plannedRecipe.id);
+
+          const item: CalendarItemViewDto = {
+            itemType: "recipe",
+            id: plannedRecipe.id,
+            recipeId: plannedRecipe.recipeId,
+            recipeName: plannedRecipe.recipeName ?? "Unknown",
+            slot: plannedRecipe.slot as Slot,
+            date: plannedRecipe.date,
+          };
+
+          return {
+            ...prev,
+            [oldDate]: oldArr,
+            [newDate]: existsInNew
+              ? newArr.map((i) => (i.id === plannedRecipe.id ? item : i))
+              : [...newArr, item],
+          };
+        });
+      },
+    })
+  );
+
+  // onNotePlanned
+  useSubscription(
+    trpc.calendar.onNotePlanned.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        const { note } = payload;
+
+        setCalendarData((prev) => {
+          const arr = prev[note.date] ?? [];
+          const exists = arr.some((i) => i.id === note.id);
+
+          if (exists) return prev;
+
+          const item: CalendarItemViewDto = {
+            itemType: "note",
+            id: note.id,
+            title: note.title,
+            recipeId: note.recipeId ?? null,
+            slot: note.slot as Slot,
+            date: note.date,
+          };
+
+          return { ...prev, [note.date]: [...arr, item] };
+        });
+      },
+    })
+  );
+
+  // onNoteDeleted
+  useSubscription(
+    trpc.calendar.onNoteDeleted.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        const { noteId, date } = payload;
+
+        // Remove from base query cache and optimistic data
+        removeNoteFromCache(noteId);
+        setCalendarData((prev) => {
+          const arr = prev[date] ?? [];
+
+          return { ...prev, [date]: arr.filter((i) => i.id !== noteId) };
+        });
+      },
+    })
+  );
+
+  // onNoteUpdated
+  useSubscription(
+    trpc.calendar.onNoteUpdated.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        const { note, oldDate } = payload;
+        const newDate = note.date;
+
+        setCalendarData((prev) => {
+          // Remove from old date
+          const oldArr = (prev[oldDate] ?? []).filter((i) => i.id !== note.id);
+
+          // Add to new date
+          const newArr = prev[newDate] ?? [];
+          const existsInNew = newArr.some((i) => i.id === note.id);
+
+          const item: CalendarItemViewDto = {
+            itemType: "note",
+            id: note.id,
+            title: note.title,
+            recipeId: note.recipeId ?? null,
+            slot: note.slot as Slot,
+            date: note.date,
+          };
+
+          return {
+            ...prev,
+            [oldDate]: oldArr,
+            [newDate]: existsInNew
+              ? newArr.map((i) => (i.id === note.id ? item : i))
+              : [...newArr, item],
+          };
+        });
+      },
+    })
+  );
+
+  // onFailed
+  useSubscription(
+    trpc.calendar.onFailed.subscriptionOptions(undefined, {
+      onData: (payload) => {
+        addToast({
+          severity: "danger",
+          title: payload.reason,
+        });
+        invalidate();
+      },
+    })
+  );
+}
