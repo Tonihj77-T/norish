@@ -96,6 +96,8 @@ services:
       OIDC_ISSUER: https://auth.example.com
       OIDC_CLIENT_ID: <client-id>
       OIDC_CLIENT_SECRET: <client-secret>
+      # OIDC_WELLKNOWN: https://auth.example.com/.well-known/openid-configuration
+      # Wellknown is optional: By default the wellknown URL is derived from the issuer by appending /.well-known/openid-configuration
 
       # Alternative: GitHub OAuth (uncomment and remove OIDC above)
       # GITHUB_CLIENT_ID: <github-client-id>
@@ -200,11 +202,11 @@ Only a few environment variables are required. All other settings are managed vi
 
 Configure **one** auth provider via environment variables to create your first admin account:
 
-| Provider   | Variables                                                                                       |
-| ---------- | ----------------------------------------------------------------------------------------------- |
-| **OIDC**   | `OIDC_NAME`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_WELLKNOWN` (optional) |
-| **GitHub** | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`                                                      |
-| **Google** | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`                                                      |
+| Provider   | Variables                                                                                       | Callback                                                 |
+| ---------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| **OIDC**   | `OIDC_NAME`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`, `OIDC_WELLKNOWN` (optional) | https://example.norish.com/api/auth/oauth2/callback/oidc |
+| **GitHub** | `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`                                                      | https://example.norish.com/api/auth/callback/github      |
+| **Google** | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`                                                      | https://example.norish.com/api/auth/callback/google      |
 
 After first login, manage all auth providers via **Settings => Admin**.
 

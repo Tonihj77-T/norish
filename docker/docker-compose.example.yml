@@ -33,6 +33,7 @@ services:
       OIDC_CLIENT_ID: <client-id>
       OIDC_CLIENT_SECRET: <client-secret>
       # OIDC_WELLKNOWN: https://auth.example.com/.well-known/openid-configuration
+      # Wellknown is optional: By default the wellknown URL is derived from the issuer by appending /.well-known/openid-configuration
 
       # Option 2: GitHub OAuth (uncomment and remove OIDC above)
       # GITHUB_CLIENT_ID: <github-client-id>

@@ -66,7 +66,8 @@ function buildOIDCProviders() {
     providers.push({
       providerId: "oidc",
       discoveryUrl:
-        oidcProvider.wellknown || `${oidcProvider.issuer}/.well-known/openid-configuration`,
+        oidcProvider.wellknown ||
+        new URL(".well-known/openid-configuration", oidcProvider.issuer).toString(),
       clientId: oidcProvider.clientId,
       clientSecret: oidcProvider.clientSecret,
       scopes: ["openid", "profile", "email"],
