@@ -66,7 +66,7 @@ export function useRecipesQuery(filters: RecipeFilters = {}): RecipesQueryResult
   const pendingRecipeIds = useMemo(() => new Set(pendingQuery.data ?? []), [pendingQuery.data]);
 
   const infiniteQueryOptions = trpc.recipes.list.infiniteQueryOptions(
-    { limit: 50, search, tags, filterMode, sortMode, minRating },
+    { limit: 100, search, tags, filterMode, sortMode, minRating },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     }

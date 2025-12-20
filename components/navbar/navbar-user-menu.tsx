@@ -91,111 +91,75 @@ export default function NavbarUserMenu({ trigger = "avatar" }: NavbarUserMenuPro
 
           <DropdownItem
             key="create-recipe"
-            className="py-2 data-[focus=true]:bg-transparent data-[hover=true]:bg-transparent"
+            className={`py-3 ${cssButtonPill}`}
+            startContent={
+              <span className="text-default-500">
+                <PlusIcon className="size-4" />
+              </span>
+            }
             onPress={() => {
               setUserMenuOpen(false);
               router.push("/recipes/new");
             }}
           >
-            <Button
-              className={`w-full justify-start bg-transparent ${cssButtonPill}`}
-              radius="full"
-              size="md"
-              startContent={
-                <span className="text-default-500">
-                  <PlusIcon className="size-4" />
-                </span>
-              }
-              variant="light"
-            >
-              <span className="flex flex-col items-start">
-                <span className="text-base leading-tight font-medium">New recipe</span>
-                <span className="text-default-500 text-xs leading-tight">
-                  Write your own recipe
-                </span>
-              </span>
-            </Button>
+            <div className="flex flex-col items-start">
+              <span className="text-base leading-tight font-medium">New recipe</span>
+              <span className="text-default-500 text-xs leading-tight">Write your own recipe</span>
+            </div>
           </DropdownItem>
 
           <DropdownItem
             key="import-url"
-            className="py-2 data-[focus=true]:bg-transparent data-[hover=true]:bg-transparent"
+            className={`py-3 ${cssButtonPill}`}
+            startContent={
+              <span className="text-default-500">
+                <ArrowDownTrayIcon className="size-4" />
+              </span>
+            }
             onPress={() => {
               setUserMenuOpen(false);
               setShowUrlModal(true);
             }}
           >
-            <Button
-              className={`w-full justify-start bg-transparent ${cssButtonPill}`}
-              radius="full"
-              size="md"
-              startContent={
-                <span className="text-default-500">
-                  <ArrowDownTrayIcon className="size-4" />
-                </span>
-              }
-              variant="light"
-            >
-              <span className="flex flex-col items-start">
-                <span className="text-base leading-tight font-medium">Import from URL</span>
-                <span className="text-default-500 text-xs leading-tight">Paste a recipe link</span>
-              </span>
-            </Button>
+            <div className="flex flex-col items-start">
+              <span className="text-base leading-tight font-medium">Import from URL</span>
+              <span className="text-default-500 text-xs leading-tight">Paste a recipe link</span>
+            </div>
           </DropdownItem>
 
-          <DropdownItem
-            key="theme"
-            isReadOnly
-            className="py-2 data-[focus=true]:bg-transparent data-[hover=true]:bg-transparent"
-          >
+          <DropdownItem key="theme" isReadOnly className={`py-3 ${cssButtonPill}`}>
             <ThemeSwitch />
           </DropdownItem>
           <DropdownItem
             key="settings"
-            className="py-2 data-[focus=true]:bg-transparent data-[hover=true]:bg-transparent"
-          >
-            <Button
-              as="a"
-              className={`w-full justify-start bg-transparent ${cssButtonPill}`}
-              href="/settings?tab=user"
-              radius="full"
-              size="md"
-              startContent={
-                <span className="text-default-500">
-                  <UsersIcon className="size-4" />
-                </span>
-              }
-              variant="light"
-              onPress={() => setUserMenuOpen(false)}
-            >
-              <span className="flex flex-col items-start">
-                <span className="text-base leading-tight font-medium">Settings</span>
-                <span className="text-default-500 text-xs leading-tight">Manage your account</span>
+            className={`py-3 ${cssButtonPill}`}
+            href="/settings?tab=user"
+            startContent={
+              <span className="text-default-500">
+                <UsersIcon className="size-4" />
               </span>
-            </Button>
+            }
+            onPress={() => setUserMenuOpen(false)}
+          >
+            <div className="flex flex-col items-start">
+              <span className="text-base leading-tight font-medium">Settings</span>
+              <span className="text-default-500 text-xs leading-tight">Manage your account</span>
+            </div>
           </DropdownItem>
           <DropdownItem
             key="logout"
-            className="py-2 data-[focus=true]:bg-transparent data-[hover=true]:bg-transparent"
+            className={`text-danger-400 py-3 ${cssButtonPillDanger}`}
+            startContent={
+              <span className="text-danger-400">
+                <ArrowUpIcon className="size-4" />
+              </span>
+            }
+            onPress={() => {
+              setUserMenuOpen(false);
+              signOut();
+            }}
           >
-            <Button
-              className={`text-danger-400 w-full justify-start bg-transparent ${cssButtonPillDanger}`}
-              color="danger"
-              radius="full"
-              size="md"
-              startContent={
-                <span className="text-danger-400">
-                  <ArrowUpIcon className="size-4" />
-                </span>
-              }
-              variant="light"
-              onPress={() => {
-                setUserMenuOpen(false);
-                signOut();
-              }}
-            >
-              <span className="text-base font-medium">Logout</span>
-            </Button>
+            <span className="text-base font-medium">Logout</span>
           </DropdownItem>
         </DropdownMenu>
       </Dropdown>

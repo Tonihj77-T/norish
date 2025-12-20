@@ -1,17 +1,14 @@
 "use client";
 
-import { FC, useEffect, useState, MouseEvent, KeyboardEvent } from "react";
+import { FC, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { MoonIcon, SunIcon, ComputerDesktopIcon } from "@heroicons/react/16/solid";
-import { Button } from "@heroui/react";
 
-import { cssButtonPill } from "@/config/css-tokens";
-
-export const ThemeSwitch: FC = () => {
+// Hook to get theme state and toggle function
+export function useThemeSwitch() {
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  // Wait until mounted to avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -19,13 +16,11 @@ export const ThemeSwitch: FC = () => {
   const effectiveTheme = resolvedTheme ?? theme;
   const isDark = effectiveTheme === "dark";
 
-  const onChange = () => {
+  const cycleTheme = () => {
     if (theme === "light") setTheme("dark");
     else if (theme === "dark") setTheme("system");
     else setTheme("light");
   };
-
-  const stopProp = (e: MouseEvent | KeyboardEvent) => e.stopPropagation();
 
   const icon =
     theme === "system" ? (
@@ -38,41 +33,45 @@ export const ThemeSwitch: FC = () => {
 
   const label = theme === "system" ? "System default" : isDark ? "Dark mode" : "Light mode";
 
+  return { mounted, icon, label, cycleTheme };
+}
+
+// Renders the content for inside the DropdownItem - includes icon for proper alignment
+export const ThemeSwitch: FC = () => {
+  const { mounted, icon, label, cycleTheme } = useThemeSwitch();
+
   if (!mounted) {
-    // Return skeleton or nothing during SSR
     return (
-      <div className="w-full">
-        <Button
-          disabled
-          className={`w-full justify-start bg-transparent ${cssButtonPill}`}
-          radius="full"
-          size="md"
-          variant="light"
-        >
-          <span className="flex flex-col items-start opacity-50">
-            <span className="text-sm leading-tight font-medium">Theme</span>
-            <span className="text-default-500 text-xs leading-tight">Loading…</span>
-          </span>
-        </Button>
+      <div className="flex w-full cursor-pointer items-center gap-2" role="button" tabIndex={0}>
+        <span className="text-default-500 opacity-50">
+          <SunIcon className="size-4" />
+        </span>
+        <div className="flex flex-col items-start opacity-50">
+          <span className="text-base leading-tight font-medium">Theme</span>
+          <span className="text-default-500 text-xs leading-tight">Loading…</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full" role="presentation" onClick={stopProp} onKeyDown={stopProp}>
-      <Button
-        className={`w-full justify-start bg-transparent ${cssButtonPill}`}
-        radius="full"
-        size="md"
-        startContent={<span className="text-default-500">{icon}</span>}
-        variant="light"
-        onPress={onChange}
-      >
-        <span className="flex flex-col items-start">
-          <span className="text-sm leading-tight font-medium">Theme</span>
-          <span className="text-default-500 text-xs leading-tight">{label}</span>
-        </span>
-      </Button>
+    <div
+      className="flex w-full cursor-pointer items-center gap-2"
+      role="button"
+      tabIndex={0}
+      onClick={cycleTheme}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          cycleTheme();
+        }
+      }}
+    >
+      <span className="text-default-500">{icon}</span>
+      <div className="flex flex-col items-start">
+        <span className="text-base leading-tight font-medium">Theme</span>
+        <span className="text-default-500 text-xs leading-tight">{label}</span>
+      </div>
     </div>
   );
 };

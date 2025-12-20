@@ -173,7 +173,7 @@ export default function RecipeGrid() {
           endReached={loadMore}
           initialTopMostItemIndex={initialTopMostItemIndex}
           itemContent={itemContent}
-          overscan={800}
+          overscan={1200}
           rangeChanged={handleRangeChanged}
         />
       )}
