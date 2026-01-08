@@ -2,7 +2,7 @@
 # Base image (minimal, no pnpm needed at runtime)
 ##############################
 FROM node:25-alpine AS base
-RUN useradd -m norish
+# Note: useradd is not available in Alpine Linux. User creation is handled in the runtime stage.
 # Security: upgrade all packages to latest versions to fix CVEs
 RUN apk upgrade --no-cache && \
     apk add --no-cache ca-certificates libc6-compat
@@ -69,7 +69,7 @@ RUN set -eux; cd node_modules/.pnpm; \
 FROM builder-base AS build
 
 RUN apk add --no-cache python3 make g++ pkgconfig libpq-dev
-RUN useradd -m norish
+# Note: useradd is not available in Alpine Linux. User creation is handled in the runtime stage.
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -86,7 +86,7 @@ RUN pnpm run build && \
 # Runtime stage (minimal, no pnpm)
 ##############################
 FROM base AS runtime
-RUN useradd -m norish
+# Note: useradd is not available in Alpine Linux. Proper user creation is done below using addgroup/adduser.
 ARG YT_DLP_VERSION=2025.11.12
 
 # Security: upgrade all packages first, then install runtime deps
