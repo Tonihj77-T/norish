@@ -108,9 +108,6 @@ ENV NODE_ENV=production \
 ARG UID=1000
 ARG GID=1000
 
-RUN addgroup -g ${GID} -S norishapp || true && \
-    adduser  -u ${UID} -S norish -G norishapp || true
-
 # Copy Next.js standalone output (includes minimal node_modules for Next.js itself)
 COPY --from=build --chown=${UID}:${GID} /app/.next/standalone ./
 
@@ -140,6 +137,10 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     fi && \
     wget -q "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/${YT_DLP_BINARY}" -O /app/bin/yt-dlp && \
     chmod +x /app/bin/yt-dlp
+
+# Create norish user in final container stage
+RUN addgroup -g 1000 -S norishapp || true && \
+    adduser -u 1000 -S norish -G norishapp || true
 
 USER norish
 
