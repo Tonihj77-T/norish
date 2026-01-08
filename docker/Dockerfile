@@ -104,54 +104,36 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOST="0.0.0.0"
 
-# Create non-root user with configurable UID/GID
-# Enhanced with explicit verification and error handling
-ARG UID=1000
-ARG GID=1000
-
-# Robust user creation with verification
-RUN set -ex; \
-    echo "==> Creating norish user and group (UID=${UID}, GID=${GID})"; \
-    # Create group if it doesn't exist
-    if ! getent group norishapp > /dev/null 2>&1; then \
-      addgroup -g ${GID} -S norishapp && echo "✓ Group 'norishapp' created"; \
-    else \
-      echo "✓ Group 'norishapp' already exists"; \
-    fi; \
-    # Create user if it doesn't exist
-    if ! getent passwd norish > /dev/null 2>&1; then \
-      adduser -u ${UID} -S -G norishapp -s /bin/sh norish && echo "✓ User 'norish' created"; \
-    else \
-      echo "✓ User 'norish' already exists"; \
-    fi; \
-    # Verify user and group exist
-    echo "==> Verifying user creation..."; \
-    getent passwd norish || (echo "ERROR: User 'norish' does not exist after creation!" && exit 1); \
-    getent group norishapp || (echo "ERROR: Group 'norishapp' does not exist after creation!" && exit 1); \
-    id norish || (echo "ERROR: Cannot resolve user 'norish'!" && exit 1); \
-    echo "==> User verification successful"; \
-    echo "User details:"; \
-    id norish
+# More robust user/group creation
+RUN set -e \
+    # First check if group exists with different GID
+    && getent group norishapp || addgroup -S norishapp \
+    # Then check if user exists with different UID
+    && getent passwd norish || adduser -S norish -G norishapp \
+    # Verify that user and group exist
+    && getent passwd norish \
+    && getent group norishapp \
+    && echo "✅ User norish and group norishapp verified"
 
 # Copy Next.js standalone output (includes minimal node_modules for Next.js itself)
-COPY --from=build --chown=${UID}:${GID} /app/.next/standalone ./
+COPY --from=build --chown=norish:norishapp /app/.next/standalone ./
 
 # Copy static assets
-COPY --from=build --chown=${UID}:${GID} /app/.next/static ./.next/static
-COPY --from=build --chown=${UID}:${GID} /app/public ./public
+COPY --from=build --chown=norish:norishapp /app/.next/static ./.next/static
+COPY --from=build --chown=norish:norishapp /app/public ./public
 
 # Copy compiled backend and configs
-COPY --from=build --chown=${UID}:${GID} /app/dist-server ./dist-server
-COPY --from=build --chown=${UID}:${GID} /app/config ./config
-COPY --from=build --chown=${UID}:${GID} /app/server/db ./server/db
-COPY --from=build --chown=${UID}:${GID} /app/server/ai/prompts ./server/ai/prompts
+COPY --from=build --chown=norish:norishapp /app/dist-server ./dist-server
+COPY --from=build --chown=norish:norishapp /app/config ./config
+COPY --from=build --chown=norish:norishapp /app/server/db ./server/db
+COPY --from=build --chown=norish:norishapp /app/server/ai/prompts ./server/ai/prompts
 
 # Copy pruned production node_modules (overwrites/merges with standalone's minimal deps)
-COPY --from=prod-deps --chown=${UID}:${GID} /app/node_modules ./node_modules
+COPY --from=prod-deps --chown=norish:norishapp /app/node_modules ./node_modules
 
 # Create uploads, video temp, and binaries directories
 RUN mkdir -p /app/uploads/recipes /app/uploads/avatars /app/uploads/video-temp /app/bin && \
-    chown -R ${UID}:${GID} /app/uploads /app/bin
+    chown -R norish:norishapp /app/uploads /app/bin
 
 # Download yt-dlp standalone binary during build (architecture-specific for Alpine/musl)
 ARG TARGETARCH
