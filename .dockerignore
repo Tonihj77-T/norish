@@ -1,23 +1,44 @@
 # .dockerignore
+# Exclude dependencies (will be installed fresh in container)
 node_modules
+
+# Exclude build artifacts (will be built fresh in container)
 .next
+dist-server
+
+# Version control
 .git
 .gitignore
+.github
+
+# Environment files (except production)
 .env*
 !.env.production
-dist-server
+
+# Test and coverage
 coverage
+
+# IDE and editor files
 .vscode
 .idea
+
+# Logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# OS files
 .DS_Store
 Thumbs.db
+
+# Documentation
 README.md
+
+# Docker files (prevent recursive copying)
 docker-compose*.yml
 Dockerfile*
 .dockerignore
-.github
+
+# User uploads (handled by volumes in production)
 uploads/
