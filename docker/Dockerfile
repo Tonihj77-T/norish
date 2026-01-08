@@ -86,7 +86,7 @@ RUN pnpm run build && \
 # Runtime stage (minimal, no pnpm)
 ##############################
 FROM base AS runtime
-# Note: useradd is not available in Alpine Linux. Proper user creation is done below using addgroup/adduser.
+
 ARG YT_DLP_VERSION=2025.11.12
 
 # Security: upgrade all packages first, then install runtime deps
@@ -104,12 +104,34 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOST="0.0.0.0"
 
-# Create non-root user with configurable UID/GID (always ensure norish exists)
+# Create non-root user with configurable UID/GID
+# Enhanced with explicit verification and error handling
 ARG UID=1000
 ARG GID=1000
 
-RUN addgroup -g ${GID} -S norishapp || true && \
-    adduser  -u ${UID} -S norish -G norishapp || true
+# Robust user creation with verification
+RUN set -ex; \
+    echo "==> Creating norish user and group (UID=${UID}, GID=${GID})"; \
+    # Create group if it doesn't exist
+    if ! getent group norishapp > /dev/null 2>&1; then \
+      addgroup -g ${GID} -S norishapp && echo "✓ Group 'norishapp' created"; \
+    else \
+      echo "✓ Group 'norishapp' already exists"; \
+    fi; \
+    # Create user if it doesn't exist
+    if ! getent passwd norish > /dev/null 2>&1; then \
+      adduser -u ${UID} -S -G norishapp -s /bin/sh norish && echo "✓ User 'norish' created"; \
+    else \
+      echo "✓ User 'norish' already exists"; \
+    fi; \
+    # Verify user and group exist
+    echo "==> Verifying user creation..."; \
+    getent passwd norish || (echo "ERROR: User 'norish' does not exist after creation!" && exit 1); \
+    getent group norishapp || (echo "ERROR: Group 'norishapp' does not exist after creation!" && exit 1); \
+    id norish || (echo "ERROR: Cannot resolve user 'norish'!" && exit 1); \
+    echo "==> User verification successful"; \
+    echo "User details:"; \
+    id norish
 
 # Copy Next.js standalone output (includes minimal node_modules for Next.js itself)
 COPY --from=build --chown=${UID}:${GID} /app/.next/standalone ./
@@ -140,6 +162,15 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
     fi && \
     wget -q "https://github.com/yt-dlp/yt-dlp/releases/download/${YT_DLP_VERSION}/${YT_DLP_BINARY}" -O /app/bin/yt-dlp && \
     chmod +x /app/bin/yt-dlp
+
+# Final verification before switching user
+RUN set -ex; \
+    echo "==> Final pre-flight checks before USER directive..."; \
+    getent passwd norish > /dev/null 2>&1 || (echo "FATAL: User 'norish' not found in passwd!" && exit 1); \
+    id norish > /dev/null 2>&1 || (echo "FATAL: Cannot resolve user 'norish'!" && exit 1); \
+    test -d /app || (echo "FATAL: /app directory does not exist!" && exit 1); \
+    ls -la /app > /dev/null 2>&1 || (echo "FATAL: Cannot list /app directory!" && exit 1); \
+    echo "==> All pre-flight checks passed successfully"
 
 USER norish
 
