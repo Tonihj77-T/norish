@@ -1,0 +1,11 @@
+{
+  "build": {
+    "dockerfilePath": "docker/Dockerfile"
+  },
+  "deploy": {
+    "startCommand": "node dist-server/server.cjs",
+    "healthcheckPath": "/api/health",
+    "healthcheckTimeout": 100,
+    "restartPolicyType": "ON_FAILURE"
+  }
+}
