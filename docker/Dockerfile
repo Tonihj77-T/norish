@@ -82,6 +82,13 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy" \
 RUN pnpm run build && \
     rm -rf .next/cache .next/trace
 
+# Verify that the server build output exists
+RUN set -ex; \
+    echo "==> Verifying build outputs..."; \
+    test -f /app/dist-server/server.cjs || (echo "FATAL: dist-server/server.cjs was not created during build!" && ls -la /app/dist-server/ && exit 1); \
+    test -d /app/.next/standalone || (echo "FATAL: .next/standalone directory not found!" && exit 1); \
+    echo "==> Build verification passed successfully"
+
 ##############################
 # Runtime stage (minimal, no pnpm)
 ##############################
@@ -152,6 +159,7 @@ RUN set -ex; \
     id norish > /dev/null 2>&1 || (echo "FATAL: Cannot resolve user 'norish'!" && exit 1); \
     test -d /app || (echo "FATAL: /app directory does not exist!" && exit 1); \
     ls -la /app > /dev/null 2>&1 || (echo "FATAL: Cannot list /app directory!" && exit 1); \
+    test -f /app/dist-server/server.cjs || (echo "FATAL: /app/dist-server/server.cjs not found in runtime stage!" && ls -la /app/dist-server/ && exit 1); \
     echo "==> All pre-flight checks passed successfully"
 
 USER norish
