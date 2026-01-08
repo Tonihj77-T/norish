@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "tsx watch server.ts | pnpm exec pino-pretty",
     "build": "next build && pnpm run build:server && pnpm run update-sw",
-    "build:server": "tsdown",
+    "build:server": "echo 'Building server with tsdown...' && tsdown && echo 'Server build complete!' && ls -la dist-server/",
     "update-sw": "node scripts/update-sw-version.js",
     "clean:install": "pnpm install --frozen-lockfile",
     "build:prod": "pnpm run clean:install && cross-env NODE_ENV=production pnpm run build",
